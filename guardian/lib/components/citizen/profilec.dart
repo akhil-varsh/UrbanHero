@@ -3,14 +3,14 @@ import 'package:guardian/main.dart';
 import 'package:guardian/screens/flutter-login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class Profile extends StatefulWidget {
-  const Profile({super.key});
+class Profilec extends StatefulWidget {
+  const Profilec({super.key});
 
   @override
-  State<Profile> createState() => _ProfileState();
+  State<Profilec> createState() => _ProfileState();
 }
 
-class _ProfileState extends State<Profile> {
+class _ProfileState extends State<Profilec> {
   String username = '';
   String email = '';
 
