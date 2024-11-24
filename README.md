@@ -99,5 +99,5 @@ Contributions are welcome! Feel free to open an issue or submit a pull request t
 This project is licensed under the MIT License. See the 'LICENSE' file for details.
 
 <p align="center">
-  Made with ❤️ by the Akhil
+  Made with ❤️ by Akhil
 </p>
