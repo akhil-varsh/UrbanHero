@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:guardian/main.dart';
 import 'package:guardian/screens/flutter-login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class Profilew extends StatefulWidget {
-  const Profilew({super.key});
+class Profile extends StatefulWidget {
+  const Profile({super.key});
 
   @override
-  State<Profilew> createState() => _ProfileState();
+  State<Profile> createState() => _ProfileState();
 }
 
-class _ProfileState extends State<Profilew> {
+class _ProfileState extends State<Profile> {
   String username = '';
   String email = '';
 
@@ -23,8 +22,8 @@ class _ProfileState extends State<Profilew> {
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      username = prefs.getString('username') ?? 'User';
-      email = prefs.getString('email') ?? 'Email';
+      username = prefs.getString('username') ?? 'Unknown User';
+      email = prefs.getString('email') ?? 'Unknown Email';
     });
   }
 
@@ -60,7 +59,7 @@ class _ProfileState extends State<Profilew> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
                   );
                 },
                 icon: const Icon(Icons.logout),

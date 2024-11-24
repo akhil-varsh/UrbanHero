@@ -4,7 +4,7 @@
 //
 // import 'package:greenguardians/components/statistics.dart';
 //
-// import 'package:greenguardians/components/profile.dart';
+// import 'package:greenguardians/components/profilec.dart';
 //
 // import 'package:greenguardians/components/reported_issues.dart';
 //

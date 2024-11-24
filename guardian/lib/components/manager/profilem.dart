@@ -7,14 +7,14 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../screens/flutter-login.dart';
 
-class Profilec extends StatefulWidget {
-  const Profilec({super.key});
+class ProfileManager extends StatefulWidget {
+  const ProfileManager({super.key});
 
   @override
-  State<Profilec> createState() => _ProfileState();
+  State<ProfileManager> createState() => _ProfileState();
 }
 
-class _ProfileState extends State<Profilec> {
+class _ProfileState extends State<ProfileManager> {
   String username = 'User';
   String email = 'Email';
   String role = 'Role';
@@ -49,9 +49,9 @@ class _ProfileState extends State<Profilec> {
       } catch (e) {
         debugPrint("Error fetching user data: $e");
         setState(() {
-          username = 'Citizen';
-          email = 'citizen@gmail.com';
-          role = 'Citizen';
+          username = 'Error';
+          email = 'Error';
+          role = 'Error';
         });
       }
     }

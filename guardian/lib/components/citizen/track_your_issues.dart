@@ -9,19 +9,19 @@ class TrackIssuesPage extends StatelessWidget {
       issueNumber: 'Issue No. 1',
       description: 'Plastic waste near the park.',
       status: 'In Progress',
-      imagePath: 'path/to/image1.jpg', // Update with your image path
+      imagePath: 'https://img.freepik.com/premium-photo/spilled-recycling-man-made-garbage-park-forest-near-city-empty-used-dirty-waste-plastic-bottles-caps-bags-carton-paper-boxes-environmental-total-pollution-ecological-problem-global-warming_643018-1042.jpg', // Update with your image path
     ),
     Issue(
       issueNumber: 'Issue No. 2',
       description: 'Organic waste not collected on time.',
       status: 'Resolved',
-      imagePath: 'path/to/image2.jpg', // Update with your image path
+      imagePath: 'https://static.toiimg.com/thumb/msid-81642167,width-400,resizemode-4/81642167.jpg', // Update with your image path
     ),
     Issue(
       issueNumber: 'Issue No. 3',
-      description: 'Metal waste in the river.',
+      description: 'Huge piles of waste',
       status: 'Pending',
-      imagePath: 'path/to/image3.jpg', // Update with your image path
+      imagePath: 'https://plus.unsplash.com/premium_photo-1663099654523-d3862b7742cd?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8d2FzdGV8ZW58MHx8MHx8fDA%3D', // Update with your image path
     ),
     // Add more issues as needed
   ];
