@@ -1,4 +1,4 @@
-# ♻️ AI-Powered Waste Management Platform
+# ♻️ AI-Powered Waste Reporting Platform
 
 ## 🛑 Problem Statement
 Urban areas face significant challenges in waste management due to:
