@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "727147786914",
+    "project_id": "urban-hero-d267f",
+    "storage_bucket": "urban-hero-d267f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:727147786914:android:aaec7b6fe961e543cbddfb",
+        "android_client_info": {
+          "package_name": "com.example.guardian"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDB3j5oPL92yXy0_f5T25q3q11vZ4CCL3o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

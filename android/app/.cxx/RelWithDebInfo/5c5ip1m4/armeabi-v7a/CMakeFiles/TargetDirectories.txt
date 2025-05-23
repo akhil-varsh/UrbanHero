@@ -1,0 +1,2 @@
+C:/Users/Akhil/StudioProjects/UrbanHero/android/app/.cxx/RelWithDebInfo/5c5ip1m4/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/Akhil/StudioProjects/UrbanHero/android/app/.cxx/RelWithDebInfo/5c5ip1m4/armeabi-v7a/CMakeFiles/rebuild_cache.dir
