@@ -9,6 +9,9 @@ class IssueReport {
   final String imageUrl;
   final String location;
   final DateTime timestamp;
+  final int upvoteCount;
+  final String status;
+  final String wasteType;
 
   IssueReport({
     required this.id,
@@ -17,6 +20,9 @@ class IssueReport {
     required this.imageUrl,
     required this.location,
     required this.timestamp,
+    this.upvoteCount = 0,
+    required this.status,
+    required this.wasteType,
   });
 
   factory IssueReport.fromFirestore(
@@ -29,6 +35,9 @@ class IssueReport {
       imageUrl: data['imageBase64'] ?? '', // Base64 or URL
       location: data['location'] ?? 'Unknown',
       timestamp: (data['timestamp'] as Timestamp).toDate(),
+      upvoteCount: data['upvoteCount'] ?? 0,
+      status: data['status'] ?? 'Pending',
+      wasteType: data['wasteType'] ?? 'Unknown',
     );
   }
 }
@@ -41,7 +50,8 @@ class ReportedIssues extends StatelessWidget {
 
     return firestore
         .collection('waste_reports')
-        .orderBy('timestamp', descending: true)
+        .orderBy('upvoteCount', descending: true) // Prioritize by upvotes
+        .orderBy('timestamp', descending: true) // Then by timestamp
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
@@ -49,7 +59,6 @@ class ReportedIssues extends StatelessWidget {
           .toList();
     });
   }
-
   void _showReportDetails(BuildContext context, IssueReport report) {
     showDialog(
       context: context,
@@ -85,10 +94,15 @@ class ReportedIssues extends StatelessWidget {
                     ),
                     const Divider(),
                     _buildInfoRow('Report ID', report.id),
+                    _buildInfoRow('Waste Type', report.wasteType),
                     _buildInfoRow('Waste Size', report.wasteSize),
                     _buildInfoRow('Location', report.location),
                     _buildInfoRow('Date Reported',
                         report.timestamp.toString().split('.')[0]),
+                    _buildInfoRow('Status', report.status, 
+                      color: _getStatusColor(report.status)),
+                    _buildInfoRow('Community Upvotes', report.upvoteCount.toString(), 
+                      color: report.upvoteCount > 0 ? Colors.green : null),
                     const SizedBox(height: 15),
                     const Text(
                       'Description:',
@@ -156,6 +170,18 @@ class ReportedIssues extends StatelessWidget {
       }
     }
   }
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Resolved':
+        return Colors.green;
+      case 'In Progress':
+        return Colors.orange;
+      case 'Assigned':
+        return Colors.blue;
+      default:
+        return Colors.red;
+    }
+  }
 
   Widget _buildInfoRow(String label, String value, {Color? color}) {
     return Padding(
@@ -208,27 +234,74 @@ class ReportedIssues extends StatelessWidget {
             return ListView.builder(
               itemCount: reports.length,
               itemBuilder: (context, index) {
-                final report = reports[index];
-                return Card(
+                final report = reports[index];                return Card(
                   elevation: 5,
                   margin: const EdgeInsets.all(10),
                   child: ListTile(
                     onTap: () => _showReportDetails(context, report),
                     contentPadding: const EdgeInsets.all(16),
-                    title: Text(
-                      'Report #${report.id}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    leading: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${report.upvoteCount}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: report.upvoteCount > 0 ? Colors.green.shade700 : Colors.grey,
+                          ),
+                        ),
+                        Icon(
+                          Icons.thumb_up,
+                          color: report.upvoteCount > 0 ? Colors.green.shade700 : Colors.grey,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Waste: ${report.wasteType}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(report.status),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            report.status,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 8),
                         Text('Size: ${report.wasteSize}'),
-                        Text('Location: ${report.location}'),
                         Text(
-                            'Date: ${report.timestamp.toString().split('.')[0]}'),
+                          report.description,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'Reported on: ${report.timestamp.toString().split(' ')[0]}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                       ],
                     ),
                     trailing: const Icon(Icons.arrow_forward),

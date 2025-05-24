@@ -8,6 +8,8 @@ import 'components/citizen/home_screen.dart';
 import 'components/citizen/profilec.dart';
 import 'components/citizen/throwable.dart';
 import 'components/citizen/track_your_issues.dart';
+import 'components/citizen/my_reports_page.dart';
+import 'components/citizen/community_reports_page.dart';
 import 'components/manager/manager_home.dart';
 import 'components/manager/mappage.dart';
 import 'components/manager/profilem.dart';
@@ -25,6 +27,8 @@ import 'components/worker/tasks/assigned_tasks_page.dart';
 import 'components/worker/tasks/in_progress_tasks_page.dart';
 import 'components/worker/tasks/completed_tasks_page.dart';
 import 'firebase_options.dart';
+import 'screens/manager/manager_orders_page.dart'; // Added import
+import 'package:UrbanHero/screens/chatbot_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -92,6 +96,7 @@ class MyApp extends StatelessWidget {
         '/map': (context) => const MapPage(),
         '/manager-dashboard': (context) => const ManagerPage(),
         '/assign': (context) => const WorkerManagement(),
+        '/manager-orders': (context) => const ManagerOrdersPage(), // Added route
           // Worker screens
         '/worker-dashboard': (context) => const WorkerHomeScreen(),
         '/perform': (context) => const WorkerStatsScreen(),
@@ -103,14 +108,16 @@ class MyApp extends StatelessWidget {
         '/assigned_tasks': (context) => const AssignedTasksPage(),
         '/in_progress_tasks': (context) => const InProgressTasksPage(),
         '/completed_tasks': (context) => const CompletedTasksPage(),
-        
-        // Citizen screens
+          // Citizen screens
         '/throw': (context) => const PolyGeofence(),
         '/res': (context) => const PolyGeofenceServic(),
         '/citizen-dashboard': (context) => const SecondPage(),
-        '/trackissues': (context) => TrackIssuesPage(),
+        // '/trackissues': (context) => TrackIssuesPage(),
         '/cart': (context) => const Cart(),
         '/Standings': (context) => const Standings(),
+        '/my-reports': (context) => const MyReportsPage(),
+        '/community-reports': (context) =>  TrackIssuesPage(),
+        '/chatbot': (context) => const ChatbotScreen(),
       },
     );
   }

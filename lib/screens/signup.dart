@@ -32,6 +32,22 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -80,6 +96,7 @@ class _SignupScreenState extends State<SignupScreen> {
         'username': usernameController.text.trim(),
         'email': emailController.text.trim(),
         'role': selectedRole,
+        'credits': 100, // Initialize credits to 0 for new users
       };
 
       if (selectedRole == "Worker" && workerLocation != null) {
@@ -90,26 +107,24 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (!mounted) return;
 
+      // Clear fields after successful signup
+      usernameController.clear();
+      emailController.clear();
+      passwordController.clear();
+      setState(() {
+        selectedRole = null;
+        workerLocation = null;
+      });
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Account created successfully!'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('Account created successfully! Please login.'), backgroundColor: Colors.green),
       );
+      // Navigate to login screen after successful signup
+      Navigator.pop(context); // Go back to login screen
 
-      switch (selectedRole) {
-        case "Citizen":
-          Navigator.pushReplacementNamed(context, '/citizen-dashboard');
-          break;
-        case "Worker":
-          Navigator.pushReplacementNamed(context, '/worker-dashboard');
-          break;
-        case "Manager":
-          Navigator.pushReplacementNamed(context, '/manager-dashboard');
-          break;
-      }
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? "Signup failed"), backgroundColor: Colors.red),
-      );
+      _showErrorDialog(context, e.message ?? "Signup failed"); // Use AlertDialog for Firebase errors
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -136,20 +151,29 @@ class _SignupScreenState extends State<SignupScreen> {
             child: SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
-                child: Card(
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(height: 24),
-                          Text('Create Account', style: Theme.of(context).textTheme.headlineSmall),
-                          const SizedBox(height: 24),
-                          TextFormField(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 32),
+                    Card(
+                      elevation: 12,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(28.0),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.person_add_alt_1,
+                                size: 50,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              const SizedBox(height: 24),
+                              Text('Create Account', style: Theme.of(context).textTheme.headlineSmall),
+                              const SizedBox(height: 24),
+                              TextFormField(
                             controller: usernameController,
                             decoration: InputDecoration(
                               labelText: "Username",
@@ -203,19 +227,59 @@ class _SignupScreenState extends State<SignupScreen> {
                             },
                           ),
                           const SizedBox(height: 24),
-                          ElevatedButton(
+                          TextButton(
                             onPressed: _isLoading ? null : () => signupUser(context),
-                            child: _isLoading ? const CircularProgressIndicator() : const Text("Sign Up"),
+                            style: TextButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Text(
+                                    "Sign Up",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                           const SizedBox(height: 16),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text("Back to Sign In"),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 2,
+                              ),
+                              child: const Text(
+                                "Already have an account? Sign in",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
-                        ],
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -223,5 +287,7 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       ),
     );
+    
+  
   }
 }

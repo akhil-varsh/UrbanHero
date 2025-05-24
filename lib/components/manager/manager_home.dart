@@ -1,5 +1,7 @@
+import 'package:UrbanHero/components/manager/orders_page.dart';
 import 'package:UrbanHero/components/manager/profilem.dart';
 import 'package:UrbanHero/components/manager/statistics.dart';
+import 'package:UrbanHero/components/manager/settings_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:UrbanHero/components/manager/reported_issues.dart';
@@ -287,11 +289,18 @@ class _ManagerPageState extends State<ManagerPage> {
             _drawerItem(Icons.assignment_outlined, 'Worker Reports', () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const WorkerReports()));
             }),
+            _drawerItem(Icons.inventory_2, 'Incentive Orders', () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const ManagerOrdersPage()));
+
+              // Add settings navigation
+            }),
             const Divider(),
             _drawerItem(Icons.person, 'Profile', () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileManager()));
             }),
             _drawerItem(Icons.settings, 'Settings', () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const ManagerSettingsPage()));
+
               // Add settings navigation
             }),
             _drawerItem(Icons.logout, 'Logout', () {

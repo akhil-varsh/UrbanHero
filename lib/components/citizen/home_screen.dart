@@ -8,6 +8,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:UrbanHero/utils/geo_query_service.dart';
+import 'package:UrbanHero/utils/upvote_service.dart';
+import 'package:UrbanHero/components/citizen/nearby_reports_widget.dart';
+import 'package:UrbanHero/screens/chatbot_screen.dart';
 import 'cart.dart';
 
 class ChatBot {
@@ -27,7 +31,7 @@ class ChatBot {
     } else if (query.contains('location')) {
       return 'Click the "Get Location" button to automatically detect your current location.';
     } else if (query.contains('size')) {
-      return 'You can select the waste size from Small, Medium, Large, or Extra Large depending on the amount of waste.';
+      return 'You can select the waste size from Small, Medium, Large depending on the amount of waste.';
     } else if (query.contains('waste types')) {
       return 'Our app can classify Plastic Waste, Electronic Waste, Wet Waste, and Garbage. Just upload a clear image!';
     } else {
@@ -105,7 +109,9 @@ class _WasteReportFormState extends State<SecondPage> {
   List<Map<String, dynamic>> chatMessages = [];
 
   // Dropdown options for waste size
-  final List<String> wasteSizes = ['Small', 'Medium', 'Large'];
+  final List<String> wasteSizes = ['Small', 'Medium', 'Large', 'Extra Large']; // Added 'Extra Large' to match track_issues.dart
+
+  bool _hasShownCommunityPrompt = false; // To track if the prompt has been shown
 
   @override
   void initState() {
@@ -118,12 +124,59 @@ class _WasteReportFormState extends State<SecondPage> {
 
     // Load the TFLite model
     WasteClassifier.loadModel();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_hasShownCommunityPrompt && mounted) {
+        _showCommunityReportsPrompt(context);
+        // No need to call setState here as this is a one-time UI effect
+        // and doesn't need to rebuild the widget just for this flag.
+        // If the flag were used to conditionally render something in build(), then setState would be needed.
+        _hasShownCommunityPrompt = true; 
+      }
+    });
   }
 
   @override
   void dispose() {
     WasteClassifier.disposeModel();
     super.dispose();
+  }
+
+  void _showCommunityReportsPrompt(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must interact with the dialog
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Check Existing Reports First?'),
+          content: const SingleChildScrollView( // Added for potentially longer text
+            child: Text(
+              'Before reporting a new issue, consider checking the "Community Reports" page. '
+              'An issue in your area might already be reported, and you can simply upvote it. '
+              'This helps keep reports organized and speeds up action!',
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Dismiss & Report New'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor, // Use theme color
+              ),
+              child: const Text('View Community Reports', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Close the dialog
+                Navigator.pushNamed(context, '/community-reports'); // Navigate
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _sendMessage(String message) {
@@ -285,7 +338,7 @@ class _WasteReportFormState extends State<SecondPage> {
     );
   }
 
-  Future<void> _submitReport() async {
+  Future<void> _checkNearbyReportsAndSubmit() async {
     if (!_formKey.currentState!.validate() || imageBase64 == null) {
       _showSnackBar('Please fill all fields and add an image');
       return;
@@ -296,7 +349,160 @@ class _WasteReportFormState extends State<SecondPage> {
         isLoading = true;
       });
 
-      // No longer finding nearest worker - all reports start as "Pending"
+      // Parse the current location
+      if (location.isEmpty) {
+        _showSnackBar('Please get your location first');
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
+      // Split the location string into latitude and longitude
+      final locationParts = location.split(',');
+      if (locationParts.length != 2) {
+        _showSnackBar('Invalid location format');
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
+      double latitude = double.parse(locationParts[0].trim());
+      double longitude = double.parse(locationParts[1].trim());
+
+      // Import the GeoQueryService
+      final geoQueryService = GeoQueryService();
+      
+      // Fetch nearby reports
+      final nearbyReports = await geoQueryService.getNearbyReports(
+        latitude,
+        longitude,
+      );
+
+      setState(() {
+        isLoading = false;
+      });
+
+      // If there are nearby reports, show a dialog
+      if (nearbyReports.isNotEmpty) {
+        _showNearbyReportsDialog(nearbyReports, latitude, longitude);
+      } else {
+        // No nearby reports, proceed with submission
+        _submitReport();
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      _showSnackBar('Error checking nearby reports: $e');
+    }
+  }
+
+  void _showNearbyReportsDialog(
+    List<Map<String, dynamic>> nearbyReports, 
+    double latitude, 
+    double longitude
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            width: double.maxFinite,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: const Text(
+                    'Similar Reports Found Nearby',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'We found ${nearbyReports.length} similar reports near you. '
+                    'You can upvote an existing report or submit a new one if yours is different.',
+                    style: const TextStyle(fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: NearbyReportsWidget(
+                      latitude: latitude,
+                      longitude: longitude,
+                      onReportUpvoted: (didUpvote) {
+                        if (didUpvote) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey,
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _submitReport();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                        ),
+                        child: const Text('Report Anyway'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _submitReport() async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
       String status = "Pending";
       String userId = "Anonymous";
 
@@ -316,7 +522,7 @@ class _WasteReportFormState extends State<SecondPage> {
         'timestamp': FieldValue.serverTimestamp(),
         'status': status,
         'wasteType': classifiedWasteType ?? 'Unknown',
-        // No longer setting assignedWorker or assignedWorkerName fields
+        'upvoteCount': 0, // Initialize upvote count for new reports
       });
 
       setState(() {
@@ -353,7 +559,7 @@ class _WasteReportFormState extends State<SecondPage> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.shopping_cart),
+            icon: const Icon(Icons.shopping_cart,color: Colors.black,),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const Cart()),
@@ -364,7 +570,11 @@ class _WasteReportFormState extends State<SecondPage> {
               isChatOpen ? Icons.chat_bubble : Icons.chat_bubble_outline,
               color: Colors.black,
             ),
-            onPressed: () => setState(() => isChatOpen = !isChatOpen),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ChatbotScreen()),
+            ),
+            // setState(() => isChatOpen = !isChatOpen),
           ),
         ],
         backgroundColor: Colors.lightGreenAccent,
@@ -402,16 +612,25 @@ class _WasteReportFormState extends State<SecondPage> {
                     ),
                   ),
                 ],
-              ),
+              ),            ),
+            // ListTile(
+            //   leading: const Icon(Icons.track_changes_sharp, color: Colors.blue),
+            //   title: const Text('Track Your Issues'),
+            //   onTap: () => Navigator.pushNamed(context, '/trackissues'),
+            // ),
+            ListTile(
+              leading: const Icon(Icons.track_changes_sharp, color: Colors.purple),
+              title: const Text('My Reports'),
+              onTap: () => Navigator.pushNamed(context, '/my-reports'),
             ),
             ListTile(
-              leading: const Icon(Icons.track_changes_sharp, color: Colors.blue),
-              title: const Text('Track Your Issues'),
-              onTap: () => Navigator.pushNamed(context, '/trackissues'),
+              leading: const Icon(Icons.people_sharp, color: Colors.teal),
+              title: const Text('Community Reports'),
+              onTap: () => Navigator.pushNamed(context, '/community-reports'),
             ),
             ListTile(
               leading: const Icon(Icons.map, color: Colors.green),
-              title: const Text('Throwable Zones'),
+              title: const Text('Report Areas'),
               onTap: () => Navigator.pushNamed(context, '/res'),
             ),
              ListTile(
@@ -613,14 +832,13 @@ class _WasteReportFormState extends State<SecondPage> {
                           ),
                         ],
                       ),
-                    ),
-                  ),
+                    ),                  ),
 
                   const SizedBox(height: 24),
 
                   // Submit Button
                   ElevatedButton(
-                    onPressed: isLoading ? null : _submitReport,
+                    onPressed: isLoading ? null : _checkNearbyReportsAndSubmit,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Colors.green,
